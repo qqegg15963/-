@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狼人殺雲端法官助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForWerewolfDemo12345",
+            authDomain: "werewolf-room-demo.firebaseapp.com",
+            projectId: "werewolf-room-demo",
+            storageBucket: "werewolf-room-demo.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.roomDocRef = doc(db, "rooms", "main_room");
+        
+        onSnapshot(window.roomDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                window.globalRoomData = data;
+                updateUIState(data);
+            } else {
+                window.globalRoomData = { status: "waiting", count: 12, players: [], thiefExtraCards: [] };
+                updateUIState(window.globalRoomData);
+            }
+        });
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 sm:p-6 font-sans flex flex-col justify-between">
+    <div class="max-w-4xl mx-auto w-full">
+        <h1 class="text-2xl sm:text-3xl font-bold text-center mb-6 text-red-500 tracking-wider">🐺 狼人殺雲端數位法官 🌙</h1>
+
+        <!-- 👑 主持人介面（預設隱藏，需輸入密碼解鎖） -->
+        <div id="hostView" class="hidden bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl border border-red-900/50 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-amber-400">👑 主持人控制面板</h2>
+                <button onclick="lockHostMode()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-slate-300">🔒 鎖定並退出主持人模式</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm mb-1">玩家總人數：</label>
+                    <input type="number" id="hostPlayerCount" value="12" min="4" max="24" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm mb-1">角色配置 (自由輸入，例如：平民:4, 狼人:3, 預言家:1, 女巫:1, 獵人:1, 白痴:1, 守衛:1, 盜賊:1)：</label>
+                    <input type="text" id="hostRoleConfig" value="平民:4, 狼人:3, 預言家:1, 女巫:1, 獵人:1, 白痴:1, 守衛:1, 盜賊:1" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm">
+                </div>
+            </div>
+
+            <!-- 盜賊專屬：主持人盲牌顯示區 -->
+            <div id="hostThiefArea" class="hidden mb-4 p-4 bg-slate-900 border border-amber-500/50 rounded-xl">
+                <div class="text-amber-400 font-bold text-sm mb-1">🕵️‍♂️ 偵測到本局包含「盜賊」！多出的 2 張盲牌為：</div>
+                <div class="text-lg font-extrabold text-red-400" id="hostThiefCardsDisplay">計算中...</div>
+                <div class="text-xs text-slate-400 mt-1">（請由你主持人自行將這 2 張盲牌提供給抽到盜賊的玩家選擇）</div>
+            </div>
+
+            <div class="flex gap-3 mb-6">
+                <button onclick="hostStartGame()" class="flex-1 bg-red-600 hover:bg-red-700 font-bold py-3 px-4 rounded-xl shadow transition">🎲 隨機發牌並上傳雲端</button>
+                <button onclick="hostResetGame()" class="bg-slate-700 hover:bg-slate-600 text-red-400 font-bold py-3 px-4 rounded-xl border border-slate-600 transition">🔄 清除重置遊戲</button>
+            </div>
+
+            <div class="border-t border-slate-700 pt-4">
+                <h3 class="text-sm font-semibold text-slate-400 mb-3">全場即時狀態（主持人監控板）：</h3>
+                <div id="hostStatusGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    <div class="text-slate-500 text-sm italic col-span-full text-center py-4">尚未開始發牌</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 👤 玩家介面（預設直接顯示，給朋友使用） -->
+        <div id="playerView" class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl border border-slate-700">
+            <h2 class="text-lg font-semibold text-amber-400 mb-4 text-center">👤 玩家身分領取</h2>
+            
+            <div id="playerWaitNotice" class="text-center py-8 text-slate-400">
+                ⏳ 主持人尚未開始發牌，請稍候...
+            </div>
+
+            <div id="playerActiveSection" class="hidden">
+                <div class="mb-4">
+                    <label class="block text-sm mb-2 text-slate-300">請選擇你的座次號碼：</label>
+                    <select id="playerSelectId" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white text-base">
+                        <option value="">請選擇號碼...</option>
+                    </select>
+                </div>
+                <button onclick="playerClaimId()" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-3 rounded-xl shadow transition mb-6">🔒 確認並鎖定我的身分</button>
+
+                <!-- 一般身分卡 -->
+                <div id="myIdentityCard" class="hidden bg-slate-900 border-2 border-amber-500 p-6 rounded-2xl text-center shadow-lg">
+                    <div class="text-slate-400 text-sm">你的座次：<span id="myIdDisplay" class="text-amber-300 font-bold text-lg"></span> 號</div>
+                    <div class="text-3xl sm:text-4xl font-extrabold text-red-400 my-4" id="myRoleDisplay">???</div>
+                    <p class="text-xs text-slate-400 mt-2">✨ 此身分已與你的裝置綁定，請記住後將手機收起！</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部低調的主持人登入入口 -->
+    <footer class="text-center mt-10 pb-4">
+        <button onclick="tryUnlockHost()" class="text-xs text-slate-600 hover:text-slate-400 transition">👑 主持人登入</button>
+    </footer>
+
+    <script type="module">
+        import { setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // 主持人解鎖密碼設定（你可以隨時在這裡修改密碼，目前預設為 1234）
+        const HOST_PASSWORD = "1234";
+
+        window.tryUnlockHost = function() {
+            let pwd = prompt("請輸入主持人密碼：");
+            if (pwd === HOST_PASSWORD) {
+                document.getElementById('hostView').classList.remove('hidden');
+                alert("👑 成功解鎖主持人面板！");
+                document.getElementById('hostView').scrollIntoView({ behavior: 'smooth' });
+            } else if (pwd !== null) {
+                alert("❌ 密碼錯誤！");
+            }
+        };
+
+        window.lockHostMode = function() {
+            document.getElementById('hostView').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.hostStartGame = async function() {
+            const count = parseInt(document.getElementById('hostPlayerCount').value);
+            const configStr = document.getElementById('hostRoleConfig').value;
+            
+            let roles = [];
+            try {
+                configStr.split(',').forEach(item => {
+                    let parts = item.split(':');
+                    if(parts.length !== 2) throw new Error();
+                    let roleName = parts[0].trim();
+                    let roleNum = parseInt(parts[1].trim());
+                    for (let i = 0; i < roleNum; i++) roles.push(roleName);
+                });
+            } catch (e) {
+                alert('角色配置格式錯誤！格式應為：角色:數量, 角色:數量');
+                return;
+            }
+
+            if (roles.length !== count) {
+                alert(`角色總數 (${roles.length}) 與設定人數 (${count}) 不符！請確認各角色數量總和等於總人數。`);
+                return;
+            }
+
+            let hasThief = roles.includes('盜賊');
+            let extraCards = [];
+            if (hasThief) {
+                const pool = ['平民', '平民', '狼人', '狼人'];
+                for (let i = 0; i < 2; i++) {
+                    const idx = Math.floor(Math.random() * pool.length);
+                    extraCards.push(pool.splice(idx, 1)[0]);
+                }
+            }
+
+            for (let i = roles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [roles[i], roles[j]] = [roles[j], roles[i]];
+            }
+
+            let players = [];
+            for (let i = 0; i < count; i++) {
+                players.push({
+                    id: i + 1,
+                    role: roles[i],
+                    isDead: false,
+                    claimedBy: null
+                });
+            }
+
+            try {
+                await setDoc(window.roomDocRef, {
+                    status: "started",
+                    count: count,
+                    players: players,
+                    thiefExtraCards: extraCards,
+                    hasThief: hasThief
+                });
+                alert('🎲 發牌成功！資料已同步上雲端。');
+            } catch (err) {
+                console.error(err);
+                alert('上傳雲端失敗');
+            }
+        };
+
+        window.hostResetGame = async function() {
+            if(confirm('確定要重置遊戲嗎？')) {
+                try {
+                    await setDoc(window.roomDocRef, {
+                        status: "waiting",
+                        count: 12,
+                        players: [],
+                        thiefExtraCards: [],
+                        hasThief: false
+                    });
+                    localStorage.removeItem('werewolf_my_claimed_id');
+                    alert('遊戲已重置！');
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        };
+
+        window.hostToggleDeath = async function(index) {
+            let players = window.globalRoomData.players;
+            players[index].isDead = !players[index].isDead;
+            try {
+                await updateDoc(window.roomDocRef, { players: players });
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.playerClaimId = async function() {
+            const select = document.getElementById('playerSelectId');
+            const selectedId = parseInt(select.value);
+            if (!selectedId) {
+                alert('請先選擇你的號碼！');
+                return;
+            }
+
+            let myDeviceToken = localStorage.getItem('werewolf_device_token');
+            if (!myDeviceToken) {
+                myDeviceToken = 'dev_' + Math.random().toString(36).substring(2);
+                localStorage.setItem('werewolf_device_token', myDeviceToken);
+            }
+
+            let players = window.globalRoomData.players;
+            let targetPlayer = players.find(p => p.id === selectedId);
+            if (!targetPlayer) return;
+
+            if (targetPlayer.claimedBy && targetPlayer.claimedBy !== myDeviceToken) {
+                alert(`⚠️ 此號碼已被其他手機領走了！`);
+                return;
+            }
+
+            let alreadyClaimedId = localStorage.getItem('werewolf_my_claimed_id');
+            if (alreadyClaimedId && parseInt(alreadyClaimedId) !== selectedId) {
+                let oldPlayer = players.find(p => p.id === parseInt(alreadyClaimedId));
+                if (oldPlayer && oldPlayer.claimedBy === myDeviceToken) {
+                    oldPlayer.claimedBy = null;
+                }
+            }
+
+            targetPlayer.claimedBy = myDeviceToken;
+            localStorage.setItem('werewolf_my_claimed_id', selectedId);
+
+            try {
+                await updateDoc(window.roomDocRef, { players: players });
+                showMyIdentity(targetPlayer);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.updateUIState = function(data) {
+            const hostGrid = document.getElementById('hostStatusGrid');
+            const waitNotice = document.getElementById('playerWaitNotice');
+            const activeSection = document.getElementById('playerActiveSection');
+            const select = document.getElementById('playerSelectId');
+            const hostThiefArea = document.getElementById('hostThiefArea');
+            const hostThiefCardsDisplay = document.getElementById('hostThiefCardsDisplay');
+
+            if (data.status === "waiting") {
+                hostGrid.innerHTML = `<div class="text-slate-500 text-sm italic col-span-full text-center py-4">尚未開始發牌</div>`;
+                hostThiefArea.classList.add('hidden');
+                waitNotice.classList.remove('hidden');
+                activeSection.classList.add('hidden');
+            } else {
+                if (data.hasThief && data.thiefExtraCards && data.thiefExtraCards.length > 0) {
+                    hostThiefArea.classList.remove('hidden');
+                    hostThiefCardsDisplay.innerText = `🃏 盲牌 1：【${data.thiefExtraCards[0]}】 ｜ 🃏 盲牌 2：【${data.thiefExtraCards[1]}】`;
+                } else {
+                    hostThiefArea.classList.add('hidden');
+                }
+
+                hostGrid.innerHTML = '';
+                data.players.forEach((p, idx) => {
+                    hostGrid.innerHTML += `
+                        <div class="bg-slate-900 p-3 rounded-xl border ${p.isDead ? 'border-red-900 opacity-40' : 'border-slate-700'} flex flex-col justify-between">
+                            <div>
+                                <div class="text-amber-300 font-bold">${p.id} 號</div>
+                                <div class="text-red-400 text-sm font-semibold">${p.role}</div>
+                                <div class="text-[10px] text-slate-500 mt-1">${p.claimedBy ? '📱 已領取' : '⏳ 未領取'}</div>
+                            </div>
+                            <div class="mt-3 flex justify-between items-center text-xs pt-2 border-t border-slate-800">
+                                <span class="${p.isDead ? 'text-red-500' : 'text-emerald-400'}">${p.isDead ? '💀 淘汰' : '🟢 存活'}</span>
+                                <button onclick="hostToggleDeath(${idx})" class="px-2 py-1 bg-slate-800 hover:bg-red-900 text-slate-300 rounded border border-slate-600">
+                                    ${p.isDead ? '復活' : '淘汰'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                waitNotice.classList.add('hidden');
+                activeSection.classList.remove('hidden');
+                
+                let currentSelectedVal = select.value;
+                select.innerHTML = '<option value="">請選擇號碼...</option>';
+                for (let i = 1; i <= data.count; i++) {
+                    let p = data.players.find(x => x.id === i);
+                    let statusText = p && p.claimedBy ? ' (已被選)' : '';
+                    select.innerHTML += `<option value="${i}">${i} 號玩家${statusText}</option>`;
+                }
+                if(currentSelectedVal) select.value = currentSelectedVal;
+
+                let myDeviceToken = localStorage.getItem('werewolf_device_token');
+                let savedId = localStorage.getItem('werewolf_my_claimed_id');
+                if (myDeviceToken && savedId) {
+                    let matchedPlayer = data.players.find(p => p.id === parseInt(savedId));
+                    if (matchedPlayer && matchedPlayer.claimedBy === myDeviceToken) {
+                        select.value = savedId;
+                        showMyIdentity(matchedPlayer);
+                    }
+                }
+            }
+        };
+
+        window.showMyIdentity = function(player) {
+            document.getElementById('myIdDisplay').innerText = player.id;
+            document.getElementById('myRoleDisplay').innerText = player.role;
+            document.getElementById('myIdentityCard').classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>
