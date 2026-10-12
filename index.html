@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>狼人殺雲端法官助手</title>
+    <title>狼人殺</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Firebase SDK -->
     <script type="module">
@@ -41,7 +41,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 sm:p-6 font-sans flex flex-col justify-between">
     <div class="max-w-4xl mx-auto w-full">
-        <h1 class="text-2xl sm:text-3xl font-bold text-center mb-4 text-red-500 tracking-wider">🐺 狼人殺雲端數位法官 🌙</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-center mb-4 text-red-500 tracking-wider">🐺 狼人殺 🌙</h1>
 
         <!-- 👑 主持人介面 -->
         <div id="hostView" class="hidden bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl border border-red-900/50 mb-8">
@@ -98,12 +98,12 @@
             <div id="hostTabGame" class="hidden">
                 <div id="hostThiefArea" class="hidden mb-4 p-3 bg-slate-900 border border-amber-500/50 rounded-xl">
                     <div class="text-amber-400 font-bold text-xs mb-1">🕵️‍♂️ 本局包含「盜賊」！系統扣除的 2 張底牌為：</div>
-                    <div class="text-base font-extrabold text-red-400" id="hostThiefCardsDisplay">等待盜賊玩家盲選中...</div>
+                    <div class="text-base font-extrabold text-red-400" id="hostThiefCardsDisplay">等待盜賊玩家選擇中...</div>
                 </div>
 
-                <!-- 工具箱：放大版的計時器 + 隨機抽發言玩家 -->
+                <!-- 工具箱：發言計時器 + 隨機抽發言玩家 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                    <!-- 放大版發言計時器 -->
+                    <!-- 發言計時器 -->
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col justify-between text-center">
                         <div class="text-sm text-amber-300 font-bold mb-2">⏱️ 上帝發言計時器</div>
                         <div id="timerDisplay" class="text-4xl sm:text-5xl font-mono font-black text-red-400 my-2 tracking-wider">01:00</div>
@@ -159,15 +159,12 @@
                     <div class="text-slate-400 text-sm">你的座次：<span id="myIdDisplay" class="text-amber-300 font-bold text-lg"></span> 號</div>
                     <div class="text-3xl sm:text-4xl font-extrabold text-red-400 my-4" id="myRoleDisplay">???</div>
 
-                    <div id="thiefBlindChoiceSection" class="hidden mt-4 pt-4 border-t border-slate-700">
-                        <p class="text-amber-300 font-bold text-sm mb-3">🕵️‍♂️ 你抽到了「盜賊」！請點選以下蓋著的盲牌進行替換：</p>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="playerChooseBlindCard(0)" class="bg-slate-800 hover:bg-amber-600/30 border border-amber-500/50 p-4 rounded-xl text-amber-300 font-bold text-sm shadow">
-                                🃏 盲牌 1<br><span class="text-[10px] text-slate-400 font-normal">（點擊翻開選擇）</span>
-                            </button>
-                            <button onclick="playerChooseBlindCard(1)" class="bg-slate-800 hover:bg-amber-600/30 border border-amber-500/50 p-4 rounded-xl text-amber-300 font-bold text-sm shadow">
-                                🃏 盲牌 2<br><span class="text-[10px] text-slate-400 font-normal">（點擊翻開選擇）</span>
-                            </button>
+                    <!-- 🕵️‍♂️ 盜賊選擇區（強制二選一） -->
+                    <div id="thiefChoiceSection" class="hidden mt-4 pt-4 border-t border-slate-700">
+                        <p class="text-amber-300 font-bold text-sm mb-1">🕵️‍♂️ 你抽到了「盜賊」！請強制選擇一張底牌替換：</p>
+                        <p class="text-[11px] text-red-400 mb-3">⚠️ 若底牌含狼人牌，必須強制選擇狼人身分！</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="thiefCardOptionsContainer">
+                            <!-- 動態生成 2 張底牌按鈕 -->
                         </div>
                     </div>
 
@@ -493,7 +490,8 @@
             }
         };
 
-        window.playerChooseBlindCard = async function(cardIndex) {
+        // 盜賊強制選擇替換身分
+        window.playerChooseRole = async function(chosenRole) {
             let data = window.globalRoomData;
             let savedId = localStorage.getItem('werewolf_my_claimed_id');
             let players = data.players;
@@ -501,12 +499,11 @@
 
             if (!targetPlayer || targetPlayer.initialRole !== '盜賊') return;
 
-            let chosenRole = data.thiefExtraCards[cardIndex];
             targetPlayer.role = chosenRole;
 
             try {
                 await updateDoc(window.roomDocRef, { players: players });
-                alert(`🎉 盲抽完成！你替換後的新身分為：【${chosenRole}】`);
+                alert(`🎉 選擇完成！你最終的身分為：【${chosenRole}】`);
                 showMyIdentity(targetPlayer);
             } catch (err) {
                 console.error(err);
@@ -529,7 +526,7 @@
             } else {
                 if (data.hasThief && data.thiefExtraCards && data.thiefExtraCards.length > 0) {
                     hostThiefArea.classList.remove('hidden');
-                    hostThiefCardsDisplay.innerText = `🃏 盲牌 1：【${data.thiefExtraCards[0]}】 ｜ 🃏 盲牌 2：【${data.thiefExtraCards[1]}】`;
+                    hostThiefCardsDisplay.innerText = `🃏 底牌 1：【${data.thiefExtraCards[0]}】 ｜ 🃏 底牌 2：【${data.thiefExtraCards[1]}】`;
                 } else {
                     hostThiefArea.classList.add('hidden');
                 }
@@ -583,11 +580,24 @@
             document.getElementById('myRoleDisplay').innerText = player.role;
             document.getElementById('myIdentityCard').classList.remove('hidden');
 
-            const thiefBlindSection = document.getElementById('thiefBlindChoiceSection');
-            if (player.initialRole === '盜賊' && player.role === '盜賊') {
-                thiefBlindSection.classList.remove('hidden');
+            const thiefChoiceSection = document.getElementById('thiefChoiceSection');
+            const thiefContainer = document.getElementById('thiefCardOptionsContainer');
+
+            // 如果原本是盜賊且尚未選過身分
+            if (player.initialRole === '盜賊' && player.role === '盜賊' && window.globalRoomData.thiefExtraCards) {
+                thiefChoiceSection.classList.remove('hidden');
+                thiefContainer.innerHTML = '';
+                
+                window.globalRoomData.thiefExtraCards.forEach((role, idx) => {
+                    thiefContainer.innerHTML += `
+                        <button onclick="playerChooseRole('${role}')" class="bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/50 p-3 rounded-xl text-amber-300 font-bold text-xs sm:text-sm shadow flex flex-col items-center justify-center">
+                            <span>選擇底牌 ${idx + 1}</span>
+                            <span class="text-base text-white mt-1">【${role}】</span>
+                        </button>
+                    `;
+                });
             } else {
-                thiefBlindSection.classList.add('hidden');
+                thiefChoiceSection.classList.add('hidden');
             }
         };
 
