@@ -43,31 +43,58 @@
 
         <!-- 👑 主持人介面（預設隱藏，需輸入密碼解鎖） -->
         <div id="hostView" class="hidden bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl border border-red-900/50 mb-8">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
                 <h2 class="text-lg font-semibold text-amber-400">👑 主持人控制面板</h2>
                 <button onclick="lockHostMode()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-slate-300">🔒 鎖定並退出主持人模式</button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm mb-1">玩家總人數：</label>
-                    <input type="number" id="hostPlayerCount" value="12" min="4" max="24" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white">
+            <!-- 計時器工具區 -->
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-amber-300 font-bold">⏱️ 上帝計時器：</span>
+                    <input type="number" id="timerSeconds" value="60" min="10" max="600" class="w-20 bg-slate-800 border border-slate-600 rounded p-1 text-center text-white text-sm">
+                    <span class="text-xs text-slate-400">秒</span>
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm mb-1">角色配置 (自由輸入，例如：平民:4, 狼人:3, 預言家:1, 女巫:1, 獵人:1, 白痴:1, 守衛:1, 盜賊:1)：</label>
-                    <input type="text" id="hostRoleConfig" value="平民:4, 狼人:3, 預言家:1, 女巫:1, 獵人:1, 白痴:1, 守衛:1, 盜賊:1" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm">
+                <div class="flex items-center gap-2">
+                    <span id="timerDisplay" class="text-xl font-mono font-bold text-red-400">--:--</span>
+                    <button onclick="startTimer()" class="bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded text-xs font-bold text-white">開始計時</button>
+                    <button onclick="stopTimer()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-xs font-bold text-slate-300">重置</button>
                 </div>
             </div>
 
-            <!-- 盜賊專屬：主持人盲牌顯示區 -->
+            <!-- 總人數顯示與快速重置 -->
+            <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700 mb-4">
+                <div class="text-sm">
+                    當前玩家總人數：<span id="totalSelectedCount" class="text-xl font-extrabold text-amber-400">0</span> 人
+                </div>
+                <button onclick="clearRoleSelection()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded border border-slate-600">清空點選</button>
+            </div>
+
+            <!-- 點選式角色選擇器 -->
+            <div class="space-y-4 mb-6">
+                <div>
+                    <h3 class="text-xs font-semibold text-emerald-400 mb-2">🟢 好人陣營（平民與神職）</h3>
+                    <div id="goodRolesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-red-400 mb-2">🔴 狼人陣營</h3>
+                    <div id="wolfRolesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-amber-400 mb-2">🟡 特殊角色</h3>
+                    <div id="specialRolesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
+                </div>
+            </div>
+
+            <!-- 盜賊專屬：主持人盲牌顯示區（從本局牌池中抽取） -->
             <div id="hostThiefArea" class="hidden mb-4 p-4 bg-slate-900 border border-amber-500/50 rounded-xl">
-                <div class="text-amber-400 font-bold text-sm mb-1">🕵️‍♂️ 偵測到本局包含「盜賊」！多出的 2 張盲牌為：</div>
-                <div class="text-lg font-extrabold text-red-400" id="hostThiefCardsDisplay">計算中...</div>
-                <div class="text-xs text-slate-400 mt-1">（請由你主持人自行將這 2 張盲牌提供給抽到盜賊的玩家選擇）</div>
+                <div class="text-amber-400 font-bold text-sm mb-1">🕵️‍♂️ 偵測到本局包含「盜賊」！本局多出的 2 張盲牌為：</div>
+                <div class="text-lg font-extrabold text-red-400 my-1" id="hostThiefCardsDisplay">計算中...</div>
+                <div class="text-xs text-slate-400">（此 2 張牌來自本局牌池，請主持人私下讓抽到盜賊的玩家選擇）</div>
             </div>
 
             <div class="flex gap-3 mb-6">
-                <button onclick="hostStartGame()" class="flex-1 bg-red-600 hover:bg-red-700 font-bold py-3 px-4 rounded-xl shadow transition">🎲 隨機發牌並上傳雲端</button>
+                <button onclick="hostStartGame()" class="flex-1 bg-red-600 hover:bg-red-700 font-bold py-3 px-4 rounded-xl shadow transition text-base">🎲 隨機發牌並上傳雲端</button>
                 <button onclick="hostResetGame()" class="bg-slate-700 hover:bg-slate-600 text-red-400 font-bold py-3 px-4 rounded-xl border border-slate-600 transition">🔄 清除重置遊戲</button>
             </div>
 
@@ -79,7 +106,7 @@
             </div>
         </div>
 
-        <!-- 👤 玩家介面（預設直接顯示，給朋友使用） -->
+        <!-- 👤 玩家介面（單純顯示身分，保密安全） -->
         <div id="playerView" class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl border border-slate-700">
             <h2 class="text-lg font-semibold text-amber-400 mb-4 text-center">👤 玩家身分領取</h2>
             
@@ -96,7 +123,7 @@
                 </div>
                 <button onclick="playerClaimId()" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-3 rounded-xl shadow transition mb-6">🔒 確認並鎖定我的身分</button>
 
-                <!-- 一般身分卡 -->
+                <!-- 單純的玩家身分卡 -->
                 <div id="myIdentityCard" class="hidden bg-slate-900 border-2 border-amber-500 p-6 rounded-2xl text-center shadow-lg">
                     <div class="text-slate-400 text-sm">你的座次：<span id="myIdDisplay" class="text-amber-300 font-bold text-lg"></span> 號</div>
                     <div class="text-3xl sm:text-4xl font-extrabold text-red-400 my-4" id="myRoleDisplay">???</div>
@@ -114,8 +141,110 @@
     <script type="module">
         import { setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 主持人解鎖密碼設定（你可以隨時在這裡修改密碼，目前預設為 1234）
         const HOST_PASSWORD = "1234";
+
+        const roleCategories = {
+            good: ['平民', '預言家', '女巫', '獵人', '白痴', '守衛', '騎士', '守墓人', '黑市商人', '通靈師', '魔術師', '攝夢人', '獵魔人'],
+            wolf: ['狼人', '狼王', '白狼王', '狼美人', '隱狼', '狼兄', '狼弟', '夢魘', '石像鬼', '惡靈騎士', '血月使徒', '機械狼'],
+            special: ['盜賊']
+        };
+
+        let selectedRoleCounts = {};
+        let countdownInterval = null;
+
+        function initRolePicker() {
+            Object.values(roleCategories).flat().forEach(role => {
+                selectedRoleCounts[role] = 0;
+            });
+
+            selectedRoleCounts['平民'] = 4;
+            selectedRoleCounts['狼人'] = 3;
+            selectedRoleCounts['預言家'] = 1;
+            selectedRoleCounts['女巫'] = 1;
+            selectedRoleCounts['獵人'] = 1;
+            selectedRoleCounts['白痴'] = 1;
+            selectedRoleCounts['守衛'] = 1;
+
+            renderRolePicker();
+        }
+
+        function renderRolePicker() {
+            const goodGrid = document.getElementById('goodRolesGrid');
+            const wolfGrid = document.getElementById('wolfRolesGrid');
+            const specialGrid = document.getElementById('specialRolesGrid');
+
+            goodGrid.innerHTML = '';
+            wolfGrid.innerHTML = '';
+            specialGrid.innerHTML = '';
+
+            const createRoleCard = (role) => {
+                const count = selectedRoleCounts[role] || 0;
+                const card = document.createElement('div');
+                card.className = `flex items-center justify-between p-2 rounded-xl border text-sm transition ${count > 0 ? 'bg-slate-700 border-amber-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`;
+                card.innerHTML = `
+                    <span class="font-medium truncate mr-1">${role}</span>
+                    <div class="flex items-center gap-1">
+                        <button onclick="changeRoleCount('${role}', -1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-600 rounded flex items-center justify-center font-bold text-xs text-red-400 border border-slate-600">-</button>
+                        <span class="w-5 text-center font-bold ${count > 0 ? 'text-amber-300' : 'text-slate-500'}">${count}</span>
+                        <button onclick="changeRoleCount('${role}', 1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-600 rounded flex items-center justify-center font-bold text-xs text-emerald-400 border border-slate-600">+</button>
+                    </div>
+                `;
+                return card;
+            };
+
+            roleCategories.good.forEach(role => goodGrid.appendChild(createRoleCard(role)));
+            roleCategories.wolf.forEach(role => wolfGrid.appendChild(createRoleCard(role)));
+            roleCategories.special.forEach(role => specialGrid.appendChild(createRoleCard(role)));
+
+            let total = Object.values(selectedRoleCounts).reduce((a, b) => a + b, 0);
+            document.getElementById('totalSelectedCount').innerText = total;
+        }
+
+        window.changeRoleCount = function(role, delta) {
+            let current = selectedRoleCounts[role] || 0;
+            let updated = current + delta;
+            if (updated < 0) updated = 0;
+            selectedRoleCounts[role] = updated;
+            renderRolePicker();
+        };
+
+        window.clearRoleSelection = function() {
+            Object.keys(selectedRoleCounts).forEach(k => selectedRoleCounts[k] = 0);
+            renderRolePicker();
+        };
+
+        // 上帝計時器功能
+        window.startTimer = function() {
+            let seconds = parseInt(document.getElementById('timerSeconds').value);
+            if (isNaN(seconds) || seconds <= 0) return;
+            
+            clearInterval(countdownInterval);
+            let timeLeft = seconds;
+            
+            const updateDisplay = () => {
+                let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                let s = (timeLeft % 60).toString().padStart(2, '0');
+                document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+            };
+
+            updateDisplay();
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft < 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('timerDisplay').innerText = "時間到！";
+                    alert("⏰ 計時結束！");
+                } else {
+                    updateDisplay();
+                }
+            }, 1000);
+        };
+
+        window.stopTimer = function() {
+            clearInterval(countdownInterval);
+            document.getElementById('timerDisplay').innerText = "--:--";
+        };
 
         window.tryUnlockHost = function() {
             let pwd = prompt("請輸入主持人密碼：");
@@ -134,48 +263,58 @@
         };
 
         window.hostStartGame = async function() {
-            const count = parseInt(document.getElementById('hostPlayerCount').value);
-            const configStr = document.getElementById('hostRoleConfig').value;
-            
-            let roles = [];
-            try {
-                configStr.split(',').forEach(item => {
-                    let parts = item.split(':');
-                    if(parts.length !== 2) throw new Error();
-                    let roleName = parts[0].trim();
-                    let roleNum = parseInt(parts[1].trim());
-                    for (let i = 0; i < roleNum; i++) roles.push(roleName);
-                });
-            } catch (e) {
-                alert('角色配置格式錯誤！格式應為：角色:數量, 角色:數量');
+            let allCards = [];
+            Object.entries(selectedRoleCounts).forEach(([role, count]) => {
+                for (let i = 0; i < count; i++) {
+                    allCards.push(role);
+                }
+            });
+
+            if (allCards.length < 4) {
+                alert('請至少選擇 4 個以上的角色牌才能開始遊戲！');
                 return;
             }
 
-            if (roles.length !== count) {
-                alert(`角色總數 (${roles.length}) 與設定人數 (${count}) 不符！請確認各角色數量總和等於總人數。`);
-                return;
-            }
-
-            let hasThief = roles.includes('盜賊');
+            let hasThief = allCards.includes('盜賊');
             let extraCards = [];
+            let playerRoles = [...allCards];
+
+            // 遇到盜賊時：從本局牌池中隨機抽取 2 張非盜賊的牌作為底牌盲牌
             if (hasThief) {
-                const pool = ['平民', '平民', '狼人', '狼人'];
-                for (let i = 0; i < 2; i++) {
-                    const idx = Math.floor(Math.random() * pool.length);
-                    extraCards.push(pool.splice(idx, 1)[0]);
+                if (allCards.length < 6) {
+                    alert('包含盜賊時，所選角色牌總數至少需 6 張以上！');
+                    return;
+                }
+
+                for (let i = playerRoles.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [playerRoles[i], playerRoles[j]] = [playerRoles[j], playerRoles[i]];
+                }
+
+                let nonThiefIndices = [];
+                playerRoles.forEach((role, idx) => {
+                    if (role !== '盜賊') nonThiefIndices.push(idx);
+                });
+
+                let idx1 = nonThiefIndices.splice(Math.floor(Math.random() * nonThiefIndices.length), 1)[0];
+                let idx2 = nonThiefIndices.splice(Math.floor(Math.random() * nonThiefIndices.length), 1)[0];
+
+                let sortedIndices = [idx1, idx2].sort((a, b) => b - a);
+                extraCards.push(playerRoles.splice(sortedIndices[0], 1)[0]);
+                extraCards.push(playerRoles.splice(sortedIndices[1], 1)[0]);
+            } else {
+                for (let i = playerRoles.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [playerRoles[i], playerRoles[j]] = [playerRoles[j], playerRoles[i]];
                 }
             }
 
-            for (let i = roles.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [roles[i], roles[j]] = [roles[j], roles[i]];
-            }
-
+            const playerCount = playerRoles.length;
             let players = [];
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < playerCount; i++) {
                 players.push({
                     id: i + 1,
-                    role: roles[i],
+                    role: playerRoles[i],
                     isDead: false,
                     claimedBy: null
                 });
@@ -184,12 +323,12 @@
             try {
                 await setDoc(window.roomDocRef, {
                     status: "started",
-                    count: count,
+                    count: playerCount,
                     players: players,
                     thiefExtraCards: extraCards,
                     hasThief: hasThief
                 });
-                alert('🎲 發牌成功！資料已同步上雲端。');
+                alert(`🎲 發牌成功！總牌數：${allCards.length} 張，實際發給玩家：${playerCount} 人。`);
             } catch (err) {
                 console.error(err);
                 alert('上傳雲端失敗');
@@ -282,7 +421,7 @@
             } else {
                 if (data.hasThief && data.thiefExtraCards && data.thiefExtraCards.length > 0) {
                     hostThiefArea.classList.remove('hidden');
-                    hostThiefCardsDisplay.innerText = `🃏 盲牌 1：【${data.thiefExtraCards[0]}】 ｜ 🃏 盲牌 2：【${data.thiefExtraCards[1]}】`;
+                    hostThiefCardsDisplay.innerText = `🃏 底牌 1：【${data.thiefExtraCards[0]}】 ｜ 🃏 底牌 2：【${data.thiefExtraCards[1]}】`;
                 } else {
                     hostThiefArea.classList.add('hidden');
                 }
@@ -307,7 +446,7 @@
                 });
 
                 waitNotice.classList.add('hidden');
-                activeSection.classList.remove('hidden');
+                activeSection.classList.add('hidden');
                 
                 let currentSelectedVal = select.value;
                 select.innerHTML = '<option value="">請選擇號碼...</option>';
@@ -335,6 +474,8 @@
             document.getElementById('myRoleDisplay').innerText = player.role;
             document.getElementById('myIdentityCard').classList.remove('hidden');
         };
+
+        initRolePicker();
     </script>
 </body>
 </html>
