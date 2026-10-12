@@ -41,7 +41,7 @@
     <div class="max-w-4xl mx-auto w-full">
         <h1 class="text-2xl sm:text-3xl font-bold text-center mb-4 text-red-500 tracking-wider">🐺 狼人殺雲端數位法官 🌙</h1>
 
-        <!-- 👑 主持人介面（預設隱藏，登入後會展開並自動隱藏下方玩家區，畫面超乾淨） -->
+        <!-- 👑 主持人介面 -->
         <div id="hostView" class="hidden bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl border border-red-900/50 mb-8">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
                 <h2 class="text-base sm:text-lg font-semibold text-amber-400">👑 主持人控制中心</h2>
@@ -99,31 +99,32 @@
                     <div class="text-base font-extrabold text-red-400" id="hostThiefCardsDisplay">等待盜賊玩家盲選中...</div>
                 </div>
 
+                <!-- 工具箱：放大版的計時器 + 隨機抽發言玩家 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-amber-300 font-bold mb-1">⏱️ 發言計時器</div>
-                            <div class="flex items-center gap-1">
-                                <input type="number" id="timerSeconds" value="60" min="10" max="600" class="w-16 bg-slate-800 border border-slate-600 rounded p-1 text-center text-white text-xs">
-                                <span class="text-xs text-slate-400">秒</span>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span id="timerDisplay" class="text-xl font-mono font-bold text-red-400 block">--:--</span>
-                            <div class="flex gap-1 mt-1">
-                                <button onclick="startTimer()" class="bg-amber-600 hover:bg-amber-700 px-2 py-1 rounded text-[10px] font-bold">開始</button>
-                                <button onclick="stopTimer()" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px]">重置</button>
-                            </div>
+                    <!-- 放大版發言計時器 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col justify-between text-center">
+                        <div class="text-sm text-amber-300 font-bold mb-2">⏱️ 上帝發言計時器</div>
+                        <!-- 超大倒數數字顯示 -->
+                        <div id="timerDisplay" class="text-4xl sm:text-5xl font-mono font-black text-red-400 my-2 tracking-wider">01:00</div>
+                        
+                        <div class="flex items-center justify-center gap-2 mt-2">
+                            <input type="number" id="timerSeconds" value="60" min="10" max="600" class="w-16 bg-slate-800 border border-slate-600 rounded p-1.5 text-center text-white text-sm font-bold">
+                            <span class="text-xs text-slate-400">秒</span>
+                            <button onclick="startTimer()" class="bg-amber-600 hover:bg-amber-700 px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow">開始計時</button>
+                            <button onclick="stopTimer()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300">重置</button>
                         </div>
                     </div>
 
-                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex flex-col justify-between">
-                        <div class="text-xs text-amber-300 font-bold mb-1">🎲 隨機抽存活發言玩家</div>
-                        <div class="flex items-center justify-between">
-                            <span id="randomSpeakerResult" class="text-lg font-bold text-emerald-400">尚未抽籤</span>
-                            <button onclick="drawRandomSpeaker()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow">🎲 抽取發言</button>
+                    <!-- 隨機發言抽籤 -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-col justify-between">
+                        <div>
+                            <div class="text-sm text-amber-300 font-bold mb-1">🎲 隨機抽存活發言玩家</div>
+                            <div class="text-[11px] text-slate-500">（自動忽略已被淘汰死亡的玩家）</div>
                         </div>
-                        <div class="text-[10px] text-slate-500 mt-1">（自動忽略已被淘汰死亡的玩家）</div>
+                        <div class="text-center my-3">
+                            <span id="randomSpeakerResult" class="text-2xl font-black text-emerald-400">尚未抽籤</span>
+                        </div>
+                        <button onclick="drawRandomSpeaker()" class="w-full bg-blue-600 hover:bg-blue-700 py-2.5 rounded-xl text-sm font-bold shadow transition">🎲 隨機抽取下一位發言者</button>
                     </div>
                 </div>
 
@@ -136,7 +137,7 @@
             </div>
         </div>
 
-        <!-- 👤 玩家介面（若主持人登入後會自動隱藏，避免畫面混亂） -->
+        <!-- 👤 玩家介面 -->
         <div id="playerView" class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl border border-slate-700">
             <h2 class="text-lg font-semibold text-amber-400 mb-4 text-center">👤 玩家身分領取</h2>
             
@@ -292,7 +293,7 @@
 
             const randomIndex = Math.floor(Math.random() * alivePlayers.length);
             const chosen = alivePlayers[randomIndex];
-            document.getElementById('randomSpeakerResult').innerText = `👉 ${chosen.id} 號玩家`;
+            document.getElementById('randomSpeakerResult').innerText = `👉 ${chosen.id} 號`;
         };
 
         window.startTimer = function() {
@@ -314,7 +315,7 @@
                 timeLeft--;
                 if (timeLeft < 0) {
                     clearInterval(countdownInterval);
-                    document.getElementById('timerDisplay').innerText = "時間到！";
+                    document.getElementById('timerDisplay').innerText = "時間到";
                     alert("⏰ 時間到！");
                 } else {
                     updateDisplay();
@@ -324,16 +325,15 @@
 
         window.stopTimer = function() {
             clearInterval(countdownInterval);
-            document.getElementById('timerDisplay').innerText = "--:--";
+            document.getElementById('timerDisplay').innerText = "01:00";
         };
 
-        // 登入主持人：解鎖並隱藏下方玩家介面
         window.tryUnlockHost = function() {
             let pwd = prompt("請輸入主持人密碼：");
             if (pwd === HOST_PASSWORD) {
                 document.getElementById('hostView').classList.remove('hidden');
-                document.getElementById('playerView').classList.add('hidden'); // 自動隱藏玩家選號區
-                document.getElementById('footerLoginBtn').classList.add('hidden'); // 隱藏登入按鈕
+                document.getElementById('playerView').classList.add('hidden');
+                document.getElementById('footerLoginBtn').classList.add('hidden');
                 alert("👑 成功進入主持人中心！");
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (pwd !== null) {
@@ -341,7 +341,6 @@
             }
         };
 
-        // 退出主持人：恢復顯示玩家介面
         window.lockHostMode = function() {
             document.getElementById('hostView').classList.add('hidden');
             document.getElementById('playerView').classList.remove('hidden');
@@ -416,7 +415,7 @@
                     hasThief: hasThief
                 });
                 alert(`🎲 發牌成功！總牌數：${allCards.length} 張，實際發給玩家：${playerCount} 人。`);
-                switchHostTab('game'); // 自動切換到主持控場分頁
+                switchHostTab('game');
             } catch (err) {
                 console.error(err);
                 alert('上傳雲端失敗');
