@@ -41,7 +41,7 @@
     <div class="max-w-4xl mx-auto w-full">
         <h1 class="text-2xl sm:text-3xl font-bold text-center mb-4 text-red-500 tracking-wider">🐺 狼人殺雲端數位法官 🌙</h1>
 
-        <!-- 👑 主持人介面（預設隱藏，需輸入密碼解鎖） -->
+        <!-- 👑 主持人介面（預設隱藏，登入後會展開並自動隱藏下方玩家區，畫面超乾淨） -->
         <div id="hostView" class="hidden bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl border border-red-900/50 mb-8">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
                 <h2 class="text-base sm:text-lg font-semibold text-amber-400">👑 主持人控制中心</h2>
@@ -60,7 +60,6 @@
 
             <!-- ================= 畫面一：角色選擇配板區 ================= -->
             <div id="hostTabConfig">
-                <!-- 總人數顯示與清空按鈕 -->
                 <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700 mb-4">
                     <div class="text-sm">
                         當前玩家總人數：<span id="totalSelectedCount" class="text-xl font-extrabold text-amber-400">0</span> 人
@@ -68,7 +67,6 @@
                     <button onclick="clearRoleSelection()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded border border-slate-600">清空點選</button>
                 </div>
 
-                <!-- 點選式角色選擇器 -->
                 <div class="space-y-4 mb-6">
                     <div>
                         <h3 class="text-xs font-semibold text-red-400 mb-2">🔴 壞人陣營</h3>
@@ -96,15 +94,12 @@
 
             <!-- ================= 畫面二：遊戲進行主持區 ================= -->
             <div id="hostTabGame" class="hidden">
-                <!-- 盜賊底牌顯示區（盲選後同步） -->
                 <div id="hostThiefArea" class="hidden mb-4 p-3 bg-slate-900 border border-amber-500/50 rounded-xl">
                     <div class="text-amber-400 font-bold text-xs mb-1">🕵️‍♂️ 本局包含「盜賊」！系統扣除的 2 張底牌為：</div>
                     <div class="text-base font-extrabold text-red-400" id="hostThiefCardsDisplay">等待盜賊玩家盲選中...</div>
                 </div>
 
-                <!-- 工具箱：發言計時器 + 隨機抽發言玩家 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                    <!-- 發言計時器 -->
                     <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex items-center justify-between">
                         <div>
                             <div class="text-xs text-amber-300 font-bold mb-1">⏱️ 發言計時器</div>
@@ -122,7 +117,6 @@
                         </div>
                     </div>
 
-                    <!-- 隨機發言抽籤（自動過濾死亡者） -->
                     <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex flex-col justify-between">
                         <div class="text-xs text-amber-300 font-bold mb-1">🎲 隨機抽存活發言玩家</div>
                         <div class="flex items-center justify-between">
@@ -133,7 +127,6 @@
                     </div>
                 </div>
 
-                <!-- 玩家號碼狀態網格 -->
                 <div class="border-t border-slate-700 pt-3">
                     <h3 class="text-xs font-semibold text-slate-400 mb-3">全場玩家號碼與身分監控（點擊可切換生死）：</h3>
                     <div id="hostStatusGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
@@ -143,7 +136,7 @@
             </div>
         </div>
 
-        <!-- 👤 玩家介面 -->
+        <!-- 👤 玩家介面（若主持人登入後會自動隱藏，避免畫面混亂） -->
         <div id="playerView" class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl border border-slate-700">
             <h2 class="text-lg font-semibold text-amber-400 mb-4 text-center">👤 玩家身分領取</h2>
             
@@ -160,12 +153,10 @@
                 </div>
                 <button onclick="playerClaimId()" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-3 rounded-xl shadow transition mb-6">🔒 確認並鎖定我的身分</button>
 
-                <!-- 玩家身分卡 -->
                 <div id="myIdentityCard" class="hidden bg-slate-900 border-2 border-amber-500 p-6 rounded-2xl text-center shadow-lg">
                     <div class="text-slate-400 text-sm">你的座次：<span id="myIdDisplay" class="text-amber-300 font-bold text-lg"></span> 號</div>
                     <div class="text-3xl sm:text-4xl font-extrabold text-red-400 my-4" id="myRoleDisplay">???</div>
 
-                    <!-- 🕵️‍♂️ 盜賊專屬盲選區 -->
                     <div id="thiefBlindChoiceSection" class="hidden mt-4 pt-4 border-t border-slate-700">
                         <p class="text-amber-300 font-bold text-sm mb-3">🕵️‍♂️ 你抽到了「盜賊」！請點選以下蓋著的盲牌進行替換：</p>
                         <div class="grid grid-cols-2 gap-3">
@@ -185,7 +176,7 @@
     </div>
 
     <!-- 底部低調的主持人登入入口 -->
-    <footer class="text-center mt-10 pb-4">
+    <footer id="footerLoginBtn" class="text-center mt-10 pb-4">
         <button onclick="tryUnlockHost()" class="text-xs text-slate-600 hover:text-slate-400 transition">👑 主持人登入</button>
     </footer>
 
@@ -336,19 +327,25 @@
             document.getElementById('timerDisplay').innerText = "--:--";
         };
 
+        // 登入主持人：解鎖並隱藏下方玩家介面
         window.tryUnlockHost = function() {
             let pwd = prompt("請輸入主持人密碼：");
             if (pwd === HOST_PASSWORD) {
                 document.getElementById('hostView').classList.remove('hidden');
-                alert("👑 成功解鎖主持人面板！");
-                document.getElementById('hostView').scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('playerView').classList.add('hidden'); // 自動隱藏玩家選號區
+                document.getElementById('footerLoginBtn').classList.add('hidden'); // 隱藏登入按鈕
+                alert("👑 成功進入主持人中心！");
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (pwd !== null) {
                 alert("❌ 密碼錯誤！");
             }
         };
 
+        // 退出主持人：恢復顯示玩家介面
         window.lockHostMode = function() {
             document.getElementById('hostView').classList.add('hidden');
+            document.getElementById('playerView').classList.remove('hidden');
+            document.getElementById('footerLoginBtn').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -404,7 +401,7 @@
                 players.push({
                     id: i + 1,
                     role: playerRoles[i],
-                    initialRole: playerRoles[i], // 記錄初生身分
+                    initialRole: playerRoles[i],
                     isDead: false,
                     claimedBy: null
                 });
@@ -418,8 +415,8 @@
                     thiefExtraCards: extraCards,
                     hasThief: hasThief
                 });
-                alert(`🎲 發牌成功！總牌數：${allCards.length} 張，實際玩家數：${playerCount} 人。`);
-                switchHostTab('game');
+                alert(`🎲 發牌成功！總牌數：${allCards.length} 張，實際發給玩家：${playerCount} 人。`);
+                switchHostTab('game'); // 自動切換到主持控場分頁
             } catch (err) {
                 console.error(err);
                 alert('上傳雲端失敗');
@@ -496,7 +493,6 @@
             }
         };
 
-        // 玩家進行盲選盜賊牌
         window.playerChooseBlindCard = async function(cardIndex) {
             let data = window.globalRoomData;
             let savedId = localStorage.getItem('werewolf_my_claimed_id');
@@ -506,8 +502,6 @@
             if (!targetPlayer || targetPlayer.initialRole !== '盜賊') return;
 
             let chosenRole = data.thiefExtraCards[cardIndex];
-            
-            // 替換玩家的身分
             targetPlayer.role = chosenRole;
 
             try {
@@ -589,7 +583,6 @@
             document.getElementById('myRoleDisplay').innerText = player.role;
             document.getElementById('myIdentityCard').classList.remove('hidden');
 
-            // 判斷是否需要展示盜賊盲選卡
             const thiefBlindSection = document.getElementById('thiefBlindChoiceSection');
             if (player.initialRole === '盜賊' && player.role === '盜賊') {
                 thiefBlindSection.classList.remove('hidden');
