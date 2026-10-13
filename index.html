@@ -41,7 +41,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 sm:p-6 font-sans flex flex-col justify-between">
     <div class="max-w-4xl mx-auto w-full">
-        <!-- 點擊大標題 3 下即可觸發「上帝登入」暗門 -->
+        <!-- 點擊大標題 3 下即可觸發「上帝登入」暗門（若已領取身分的玩家則會被鎖定失效） -->
         <h1 onclick="handleTitleClick()" class="text-2xl sm:text-3xl font-bold text-center mb-4 text-red-500 tracking-wider cursor-pointer select-none">🐺 狼人殺 🌙</h1>
 
         <!-- 👑 上帝介面（預設隱藏） -->
@@ -190,8 +190,14 @@
         let titleClickCount = 0;
         let titleClickTimer = null;
 
-        // 點擊標題 3 次觸發上帝登入暗門
+        // 點擊標題 3 下觸發上帝登入暗門（若已領取身分則自動封鎖）
         window.handleTitleClick = function() {
+            let savedId = localStorage.getItem('werewolf_my_claimed_id');
+            if (savedId) {
+                // 已領取過身分的玩家，禁止開啟上帝登入
+                return;
+            }
+
             titleClickCount++;
             clearTimeout(titleClickTimer);
             
