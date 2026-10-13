@@ -41,16 +41,17 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 sm:p-6 font-sans flex flex-col justify-between">
     <div class="max-w-4xl mx-auto w-full">
-        <h1 class="text-2xl sm:text-3xl font-bold text-center mb-4 text-red-500 tracking-wider">🐺 狼人殺 🌙</h1>
+        <!-- 點擊大標題 3 下即可觸發「上帝登入」暗門 -->
+        <h1 onclick="handleTitleClick()" class="text-2xl sm:text-3xl font-bold text-center mb-4 text-red-500 tracking-wider cursor-pointer select-none">🐺 狼人殺 🌙</h1>
 
-        <!-- 👑 主持人介面 -->
+        <!-- 👑 上帝介面（預設隱藏） -->
         <div id="hostView" class="hidden bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl border border-red-900/50 mb-8">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
-                <h2 class="text-base sm:text-lg font-semibold text-amber-400">👑 主持人控制中心</h2>
-                <button onclick="lockHostMode()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-slate-300">🔒 退出主持人</button>
+                <h2 class="text-base sm:text-lg font-semibold text-amber-400">👑 上帝控制中心</h2>
+                <button onclick="lockHostMode()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-slate-300">🔒 退出上帝模式</button>
             </div>
 
-            <!-- 主持人二級分頁切換按鈕 -->
+            <!-- 上帝二級分頁切換按鈕 -->
             <div class="grid grid-cols-2 gap-2 mb-4 bg-slate-900 p-1.5 rounded-xl border border-slate-700">
                 <button onclick="switchHostTab('config')" id="tabBtnConfig" class="py-2 rounded-lg font-bold text-sm bg-red-600 text-white shadow">
                     ⚙️ 1. 角色選擇配板
@@ -143,7 +144,7 @@
             <h2 class="text-lg font-semibold text-amber-400 mb-4 text-center">👤 玩家身分領取</h2>
             
             <div id="playerWaitNotice" class="text-center py-8 text-slate-400">
-                ⏳ 主持人尚未開始發牌，請稍候...
+                ⏳ 上帝尚未開始發牌，請稍候...
             </div>
 
             <div id="playerActiveSection" class="hidden">
@@ -159,13 +160,11 @@
                     <div class="text-slate-400 text-sm">你的座次：<span id="myIdDisplay" class="text-amber-300 font-bold text-lg"></span> 號</div>
                     <div class="text-3xl sm:text-4xl font-extrabold text-red-400 my-4" id="myRoleDisplay">???</div>
 
-                    <!-- 🕵️‍♂️ 盜賊選擇區（強制二選一） -->
+                    <!-- 🕵️‍♂️ 盜賊選擇區 -->
                     <div id="thiefChoiceSection" class="hidden mt-4 pt-4 border-t border-slate-700">
                         <p class="text-amber-300 font-bold text-sm mb-1">🕵️‍♂️ 你抽到了「盜賊」！請強制選擇一張底牌替換：</p>
                         <p class="text-[11px] text-red-400 mb-3">⚠️ 若底牌含狼人牌，必須強制選擇狼人身分！</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="thiefCardOptionsContainer">
-                            <!-- 動態生成 2 張底牌按鈕 -->
-                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="thiefCardOptionsContainer"></div>
                     </div>
 
                     <p class="text-xs text-slate-400 mt-4">✨ 此身分已與你的裝置綁定，請記住後將手機收起！</p>
@@ -173,11 +172,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 底部低調的主持人登入入口 -->
-    <footer id="footerLoginBtn" class="text-center mt-10 pb-4">
-        <button onclick="tryUnlockHost()" class="text-xs text-slate-600 hover:text-slate-400 transition">👑 主持人登入</button>
-    </footer>
 
     <script type="module">
         import { setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -193,6 +187,23 @@
 
         let selectedRoleCounts = {};
         let countdownInterval = null;
+        let titleClickCount = 0;
+        let titleClickTimer = null;
+
+        // 點擊標題 3 次觸發上帝登入暗門
+        window.handleTitleClick = function() {
+            titleClickCount++;
+            clearTimeout(titleClickTimer);
+            
+            if (titleClickCount >= 3) {
+                titleClickCount = 0;
+                tryUnlockHost();
+            } else {
+                titleClickTimer = setTimeout(() => {
+                    titleClickCount = 0;
+                }, 1000);
+            }
+        };
 
         function initRolePicker() {
             Object.values(roleCategories).flat().forEach(role => {
@@ -327,12 +338,11 @@
         };
 
         window.tryUnlockHost = function() {
-            let pwd = prompt("請輸入主持人密碼：");
+            let pwd = prompt("請輸入上帝密碼：");
             if (pwd === HOST_PASSWORD) {
                 document.getElementById('hostView').classList.remove('hidden');
                 document.getElementById('playerView').classList.add('hidden');
-                document.getElementById('footerLoginBtn').classList.add('hidden');
-                alert("👑 成功進入主持人中心！");
+                alert("👑 成功進入上帝控制中心！");
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (pwd !== null) {
                 alert("❌ 密碼錯誤！");
@@ -342,7 +352,6 @@
         window.lockHostMode = function() {
             document.getElementById('hostView').classList.add('hidden');
             document.getElementById('playerView').classList.remove('hidden');
-            document.getElementById('footerLoginBtn').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -490,7 +499,6 @@
             }
         };
 
-        // 盜賊強制選擇替換身分
         window.playerChooseRole = async function(chosenRole) {
             let data = window.globalRoomData;
             let savedId = localStorage.getItem('werewolf_my_claimed_id');
@@ -583,7 +591,6 @@
             const thiefChoiceSection = document.getElementById('thiefChoiceSection');
             const thiefContainer = document.getElementById('thiefCardOptionsContainer');
 
-            // 如果原本是盜賊且尚未選過身分
             if (player.initialRole === '盜賊' && player.role === '盜賊' && window.globalRoomData.thiefExtraCards) {
                 thiefChoiceSection.classList.remove('hidden');
                 thiefContainer.innerHTML = '';
